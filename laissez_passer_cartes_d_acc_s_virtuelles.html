@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Laissez-passer – Cartes d’accès virtuelles</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-alt: #f1f5f9;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  
+  --ok: #10b981;
+  --ok-bg: #ecfdf5;
+  --ko: #ef4444;
+  --ko-bg: #fef2f2;
+  --warn: #f59e0b;
+  --warn-bg: #fffbeb;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  --radius: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-alt: #334155;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #334155;
+    --ok-bg: rgba(16, 185, 129, 0.1);
+    --ko-bg: rgba(239, 68, 68, 0.1);
+    --warn-bg: rgba(245, 158, 11, 0.1);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-alt: #334155;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --ok-bg: rgba(16, 185, 129, 0.1);
+  --ko-bg: rgba(239, 68, 68, 0.1);
+  --warn-bg: rgba(245, 158, 11, 0.1);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  color: var(--primary);
+}
+.brand svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+nav { display: flex; gap: 4px; background: var(--surface-alt); padding: 4px; border-radius: var(--radius); }
+nav button {
+  background: none;
+  border: 0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+nav button:hover { color: var(--text); }
+nav button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.user-ctrl { display: flex; align-items: center; gap: 12px; }
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--surface-alt);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+main {
+  max-width: 1140px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+  flex: 1;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.panel-title { font-size: 1.25rem; font-weight: 700; margin: 0; }
+
+.grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.grid-sm { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.row { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 16px; }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+input, select, textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--primary);
+  color: #ffffff;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+.btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn.alt { background: var(--surface-alt); color: var(--text); border: 1px solid var(--border); }
+.btn.alt:hover { background: var(--border); }
+.btn.danger { background: var(--ko); color: #fff; }
+.btn.danger:hover { background: #dc2626; }
+.btn.ok { background: var(--ok); color: #fff; }
+.btn.ok:hover { background: #059669; }
+.btn.sm { padding: 6px 12px; font-size: 13px; border-radius: 6px; }
+
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.badge-status.Active { background: var(--ok-bg); color: var(--ok); }
+.badge-status.Désactivé { background: var(--ko-bg); color: var(--ko); }
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stat-val { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
+.stat-lbl { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.card-band { height: 6px; background: var(--primary); }
+.card-body { padding: 18px; flex: 1; display: flex; flex-direction: column; }
+.card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.avatar {
+  width: 44px; height: 44px; border-radius: 50%; background: var(--primary);
+  display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;
+  flex-shrink: 0; object-fit: cover;
+}
+.card-title { font-size: 1.05rem; font-weight: 700; margin: 0; line-height: 1.2; }
+.card-sub { font-size: 13px; color: var(--text-muted); }
+.card-meta { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; font-size: 13px; }
+.meta-item { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+.meta-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+.card-actions { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Pass Visiteur */
+.pass-container { max-width: 380px; margin: 20px auto; }
+.pass-card {
+  background: var(--surface);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xl);
+  position: relative;
+}
+.pass-top { padding: 24px 20px; color: #fff; background: var(--primary); text-align: center; }
+.pass-top .avatar { width: 64px; height: 64px; font-size: 20px; border: 3px solid rgba(255,255,255,0.3); margin: 0 auto 12px; background: rgba(255,255,255,0.2); }
+.pass-top h3 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+.pass-top p { margin: 4px 0 0; opacity: 0.9; font-size: 14px; }
+
+.pass-body { padding: 20px; text-align: center; }
+.qr-box {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 16px;
+  display: inline-block;
+  box-shadow: var(--shadow-md);
+  margin: 10px 0;
+}
+.qr-box svg { display: block; width: 200px; height: 200px; }
+
+.timer-bar { height: 6px; background: var(--surface-alt); border-radius: 999px; overflow: hidden; margin: 12px 0; }
+.timer-fill { height: 100%; background: var(--primary); transition: width 1s linear; }
+
+/* Tables */
+.table-responsive { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+th { background: var(--surface-alt); padding: 12px 16px; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text); }
+tr:last-child td { border-bottom: 0; }
+
+/* Scanner Portique Visual */
+.scanner-viewport {
+  width: 100%;
+  max-width: 400px;
+  height: 220px;
+  background: #000;
+  border-radius: var(--radius);
+  margin: 0 auto 20px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.scanner-laser {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: var(--ko);
+  box-shadow: 0 0 8px var(--ko);
+  top: 0;
+  animation: scan 2s infinite ease-in-out;
+}
+@keyframes scan {
+  0% { top: 0%; }
+  50% { top: 98%; }
+  100% { top: 0%; }
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 100;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.theme-btn { background: none; border: 0; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: 50%; }
+.theme-btn:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z"/><path d="M8.5 12l2.5 2.5L16 9.5"/></svg>
+    Laissez-Passer
+  </div>
+  <nav id="nav"></nav>
+  <div class="user-ctrl">
+    <button class="theme-btn" id="themeToggle" title="Changer de thème">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+    <div id="sess" class="user-badge"></div>
+  </div>
+</header>
+
+<main id="main"></main>
+<div id="toast" class="toast"></div>
+
+<script>
+// --- CONFIGURATION & ÉTAT ---
+const CONFIG = {
+  STEP: 30000,
+  SERVICES: ["Externe", "Cuisine", "Sécurité"]
+};
+
+let state = {
+  currentUser: JSON.parse(localStorage.getItem('lp_currentUser')) || null,
+  accounts: JSON.parse(localStorage.getItem('lp_accounts')) || [],
+  cards: JSON.parse(localStorage.getItem('lp_cards')) || [],
+  logs: JSON.parse(localStorage.getItem('lp_logs')) || [],
+  view: "cartes",
+  authMode: "login",
+  authError: "",
+  visitorId: null
+};
+
+function saveState() {
+  localStorage.setItem('lp_currentUser', JSON.stringify(state.currentUser));
+  localStorage.setItem('lp_accounts', JSON.stringify(state.accounts));
+  localStorage.setItem('lp_cards', JSON.stringify(state.cards));
+  localStorage.setItem('lp_logs', JSON.stringify(state.logs));
+}
+
+// Security / Token Verification
+const KEYP = crypto.subtle.importKey("raw", crypto.getRandomValues(new Uint8Array(32)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+async function hmac(s) {
+  const b = new Uint8Array(await crypto.subtle.sign("HMAC", await KEYP, new TextEncoder().encode(s)));
+  return [...b.slice(0, 16)].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+const win = (t = Date.now()) => Math.floor(t / CONFIG.STEP);
+const token = async (c, w = win()) => c.id + "." + w + "." + await hmac(c.id + "." + w);
+
+const clean = s => String(s || "").replace(/[<>"'`&\\]/g, "").trim().slice(0, 80);
+const esc = s => String(s || "").replace(/[&<>"'`]/g, c => "&#" + c.charCodeAt(0) + ";");
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t.timer);
+  t.timer = setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+// Calcul du statut du badge en fonction de la plage d'heures
+function getStatus(c) {
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const [hStart, mStart] = c.startHour.split(':').map(Number);
+  const [hEnd, mEnd] = c.endHour.split(':').map(Number);
+
+  const startMinutes = hStart * 60 + mStart;
+  const endMinutes = hEnd * 60 + mEnd;
+
+  if (startMinutes <= endMinutes) {
+    if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) return "Active";
+  } else {
+    // Si la plage dépasse minuit
+    if (currentMinutes >= startMinutes || currentMinutes <= endMinutes) return "Active";
+  }
+
+  return "Désactivé";
+}
+
+// --- RENDU GÉNÉRAL ---
+
+function render() {
+  const main = document.getElementById("main");
+  const nav = document.getElementById("nav");
+  const sess = document.getElementById("sess");
+
+  // Force l'authentification si non connecté
+  if (!state.currentUser) {
+    nav.style.display = "none";
+    sess.style.display = "none";
+    renderAuthView(main);
+    return;
+  }
+
+  nav.style.display = "flex";
+  sess.style.display = "flex";
+  renderNav();
+
+  if (state.visitorId) {
+    renderVisitorView(main);
+    return;
+  }
+
+  switch (state.view) {
+    case "cartes": main.innerHTML = renderCartesView(); break;
+    case "creer": main.innerHTML = renderFormView(); break;
+    case "portique": main.innerHTML = renderPortiqueView(); break;
+    case "journal": main.innerHTML = renderJournalView(); break;
+    default: main.innerHTML = renderCartesView();
+  }
+}
+
+function renderNav() {
+  const nav = document.getElementById("nav");
+  const sess = document.getElementById("sess");
+
+  const tabs = [
+    ["cartes", "Cartes d'accès"],
+    ["creer", "Créer un Badge"],
+    ["portique", "Portique (Scanner)"],
+    ["journal", "Journal d'Audit"]
+  ];
+
+  nav.innerHTML = tabs.map(([key, label]) => `
+    <button role="tab" aria-selected="${state.view === key}" onclick="setView('${key}')">${label}</button>
+  `).join("");
+
+  sess.innerHTML = `
+    <span style="width:8px;height:8px;border-radius:50%;background:var(--ok)"></span>
+    ${esc(state.currentUser.prenom || state.currentUser.nom)} (${esc(state.currentUser.service)})
+    <button class="btn alt sm" style="margin-left:8px;" onclick="logout()">Déconnexion</button>
+  `;
+}
+
+function setView(v) {
+  state.view = v;
+  state.visitorId = null;
+  render();
+}
+
+// --- 1. AUTHENTIFICATION & INSCRIPTION ---
+
+function renderAuthView(container) {
+  const isLogin = state.authMode === "login";
+
+  container.innerHTML = `
+    <div class="panel" style="max-width:440px; margin: 40px auto;">
+      <h2 class="panel-title" style="margin-bottom:8px; text-align:center;">
+        ${isLogin ? 'Connexion Service Laissez-Passer' : 'Inscription Utilisateur'}
+      </h2>
+      <p style="text-align:center; color:var(--text-muted); font-size:14px; margin-bottom:24px;">
+        ${isLogin ? 'Veuillez saisir votre nom et mot de passe pour continuer.' : 'Créez votre compte pour gérer et vérifier les cartes d\'accès.'}
+      </p>
+
+      ${state.authError ? `<div style="background:var(--ko-bg); color:var(--ko); padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:16px;">${esc(state.authError)}</div>` : ''}
+
+      <form onsubmit="handleAuth(event)">
+        <div class="form-group">
+          <label for="auth_nom">Nom</label>
+          <input type="text" id="auth_nom" required placeholder="Ex: Dupont">
+        </div>
+
+        ${!isLogin ? `
+          <div class="form-group">
+            <label for="auth_prenom">Prénom</label>
+            <input type="text" id="auth_prenom" required placeholder="Ex: Jean">
+          </div>
+          <div class="form-group">
+            <label for="auth_service">Service</label>
+            <select id="auth_service">
+              ${CONFIG.SERVICES.map(s => `<option value="${s}">${s}</option>`).join("")}
+            </select>
+          </div>
+        ` : ''}
+
+        <div class="form-group">
+          <label for="auth_pass">Mot de passe</label>
+          <input type="password" id="auth_pass" required placeholder="••••••••">
+        </div>
+
+        <button type="submit" class="btn" style="width:100%; margin-top:8px;">
+          ${isLogin ? 'Se Connecter' : 'Créer mon compte'}
+        </button>
+      </form>
+
+      <div style="text-align:center; margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
+        <button class="btn alt sm" onclick="toggleAuthMode()">
+          ${isLogin ? "Nouveau ? Créer un compte" : "Déjà un compte ? Se connecter"}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function toggleAuthMode() {
+  state.authMode = state.authMode === "login" ? "signup" : "login";
+  state.authError = "";
+  render();
+}
+
+function handleAuth(e) {
+  e.preventDefault();
+  const nom = clean(document.getElementById("auth_nom").value);
+  const pass = document.getElementById("auth_pass").value;
+
+  if (state.authMode === "login") {
+    const user = state.accounts.find(a => a.nom.toLowerCase() === nom.toLowerCase() && a.pass === pass);
+    if (!user) {
+      state.authError = "Nom d'utilisateur ou mot de passe incorrect.";
+      render();
+      return;
+    }
+    state.currentUser = user;
+    state.authError = "";
+    saveState();
+    render();
+  } else {
+    const prenom = clean(document.getElementById("auth_prenom").value);
+    const service = document.getElementById("auth_service").value;
+
+    if (state.accounts.some(a => a.nom.toLowerCase() === nom.toLowerCase())) {
+      state.authError = "Un compte existe déjà à ce nom.";
+      render();
+      return;
+    }
+
+    const newUser = { id: "U" + Date.now(), nom, prenom, service, pass };
+    state.accounts.push(newUser);
+    state.currentUser = newUser;
+    state.authError = "";
+    saveState();
+    showToast("Compte créé avec succès !");
+    render();
+  }
+}
+
+function logout() {
+  state.currentUser = null;
+  state.visitorId = null;
+  saveState();
+  render();
+}
+
+// --- 2. LISTE DES CARTES (VIERGE AU DÉPART) ---
+
+function renderCartesView() {
+  if (state.cards.length === 0) {
+    return `
+      <div class="panel" style="text-align:center; padding:60px 20px;">
+        <h2 class="panel-title" style="margin-bottom:8px;">Aucune carte enregistrée</h2>
+        <p style="color:var(--text-muted); margin-bottom:24px;">La base de données des badges est vide. Créez un premier badge d'accès.</p>
+        <button class="btn" onclick="setView('creer')">Créer un badge d'accès</button>
+      </div>
+    `;
+  }
+
+  const total = state.cards.length;
+  const actives = state.cards.filter(c => getStatus(c) === "Active").length;
+
+  return `
+    <div class="row grid-sm" style="margin-bottom:24px">
+      <div class="stat-card">
+        <div class="stat-icon"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+        <div><div class="stat-val">${total}</div><div class="stat-lbl">Badges Émis</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--ok-bg);color:var(--ok)"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+        <div><div class="stat-val">${actives}</div><div class="stat-lbl">Actifs actuellement</div></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      ${state.cards.map(c => {
+        const status = getStatus(c);
+        return `
+          <div class="card">
+            <div class="card-band"></div>
+            <div class="card-body">
+              <div class="card-header">
+                <div class="avatar">${esc(c.prenom.charAt(0))}${esc(c.nom.charAt(0))}</div>
+                <div>
+                  <h3 class="card-title">${esc(c.prenom)} ${esc(c.nom)}</h3>
+                  <div class="card-sub">Service: <b>${esc(c.service)}</b></div>
+                </div>
+                <span class="badge-status ${status}" style="margin-left:auto">${status}</span>
+              </div>
+
+              <div class="card-meta">
+                <div class="meta-item">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Plage horaire : <b>de ${c.startHour} à ${c.endHour}</b>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                <button class="btn sm" onclick="openVisitorPass('${c.id}')">Afficher Badge</button>
+                <button class="btn sm alt danger" onclick="deleteCard('${c.id}')">Supprimer</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+// --- 3. CREATION DU BADGE UNIQUE ---
+
+function renderFormView() {
+  return `
+    <div class="panel" style="max-width: 580px; margin: 0 auto;">
+      <h2 class="panel-title" style="margin-bottom: 20px;">Création de Badge d'Accès</h2>
+      <form onsubmit="handleCreateCard(event)">
+        <div class="row">
+          <div class="form-group">
+            <label for="b_nom">Nom</label>
+            <input type="text" id="b_nom" required placeholder="Ex: Martin">
+          </div>
+          <div class="form-group">
+            <label for="b_prenom">Prénom</label>
+            <input type="text" id="b_prenom" required placeholder="Ex: Sophie">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="b_service">Service</label>
+          <select id="b_service" required>
+            ${CONFIG.SERVICES.map(s => `<option value="${s}">${s}</option>`).join("")}
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="form-group">
+            <label for="b_start">Heure d'activation (Début)</label>
+            <input type="time" id="b_start" required value="12:00">
+          </div>
+          <div class="form-group">
+            <label for="b_end">Heure de désactivation (Fin)</label>
+            <input type="time" id="b_end" required value="16:00">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px;">
+          <button type="button" class="btn alt" onclick="setView('cartes')">Annuler</button>
+          <button type="submit" class="btn">Créer le badge</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+function handleCreateCard(e) {
+  e.preventDefault();
+  const nom = clean(document.getElementById("b_nom").value);
+  const prenom = clean(document.getElementById("b_prenom").value);
+  const service = document.getElementById("b_service").value;
+  const startHour = document.getElementById("b_start").value;
+  const endHour = document.getElementById("b_end").value;
+
+  const newCard = {
+    id: "B" + Date.now(),
+    nom,
+    prenom,
+    service,
+    startHour,
+    endHour
+  };
+
+  state.cards.unshift(newCard);
+  saveState();
+  showToast("Badge créé avec succès !");
+  setView("cartes");
+}
+
+function deleteCard(id) {
+  state.cards = state.cards.filter(x => x.id !== id);
+  saveState();
+  showToast("Badge supprimé.");
+  render();
+}
+
+function openVisitorPass(id) {
+  state.visitorId = id;
+  render();
+}
+
+// --- PORTIQUE DE CONTROL (SCANNER) ---
+
+function renderPortiqueView() {
+  return `
+    <div class="row">
+      <div class="panel" style="flex:1">
+        <h2 class="panel-title">Lecteur de Portique</h2>
+        <p style="color:var(--text-muted); font-size:14px; margin-bottom:20px;">
+          Présentez un badge d'accès pour vérifier la validité de sa plage horaire et de son état.
+        </p>
+
+        <div class="scanner-viewport">
+          <div class="scanner-laser"></div>
+          <div style="text-align:center">
+            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+            <div style="font-size:13px; margin-top:8px;">Lecteur Prêt</div>
+          </div>
+        </div>
+
+        ${state.cards.length === 0 ? `
+          <div style="text-align:center; color:var(--text-muted);">Aucun badge disponible pour le test.</div>
+        ` : `
+          <div class="form-group">
+            <label for="p_card">Sélectionner un Badge à présenter</label>
+            <select id="p_card">
+              ${state.cards.map(c => `<option value="${c.id}">${esc(c.prenom)} ${esc(c.nom)} (${esc(c.service)}) - Status: ${getStatus(c)}</option>`).join("")}
+            </select>
+          </div>
+
+          <button class="btn" style="width:100%" onclick="simulateScan()">Scanner la Carte</button>
+        `}
+      </div>
+
+      <div class="panel" style="flex:1">
+        <h2 class="panel-title">Résultat de la vérification</h2>
+        <div id="scanResult">
+          <div style="text-align:center; padding:40px; color:var(--text-muted)">
+            En attente de scan...
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function simulateScan() {
+  const cardId = document.getElementById("p_card").value;
+  const c = state.cards.find(x => x.id === cardId);
+  if (!c) return;
+
+  const status = getStatus(c);
+  const ok = status === "Active";
+  let why = ok ? `Accès autorisé (Service ${c.service})` : `Accès refusé - Badge ${status}`;
+
+  if (status === "Désactivé") {
+    why = `Accès refusé - Valide uniquement de ${c.startHour} à ${c.endHour}`;
+  }
+
+  state.logs.unshift({
+    t: new Date().toISOString(),
+    card: `${c.prenom} ${c.nom}`,
+    service: c.service,
+    ok,
+    why
+  });
+  saveState();
+
+  const resDiv = document.getElementById("scanResult");
+  resDiv.innerHTML = `
+    <div style="padding:24px; border-radius:var(--radius); background:${ok ? 'var(--ok-bg)' : 'var(--ko-bg)'}; border:2px solid ${ok ? 'var(--ok)' : 'var(--ko)'}; text-align:center">
+      <div style="font-size:1.4rem; font-weight:800; color:${ok ? 'var(--ok)' : 'var(--ko)'}; margin-bottom:8px">
+        ${ok ? 'ACCÈS AUTORISÉ' : 'ACCÈS REFUSÉ'}
+      </div>
+      <div style="font-size:1.1rem; font-weight:700">${esc(c.prenom)} ${esc(c.nom)}</div>
+      <div style="font-size:13px; color:var(--text-muted); margin-top:4px">${esc(why)}</div>
+    </div>
+  `;
+}
+
+// --- JOURNAL D'AUDIT ---
+
+function renderJournalView() {
+  return `
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Journal des Passages au Portique</h2>
+        ${state.logs.length > 0 ? `<button class="btn alt sm" onclick="clearLogs()">Effacer l'historique</button>` : ''}
+      </div>
+
+      ${state.logs.length === 0 ? `
+        <div style="text-align:center; padding:40px; color:var(--text-muted)">Aucun contrôle effectué.</div>
+      ` : `
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date & Heure</th>
+                <th>Titulaire</th>
+                <th>Service</th>
+                <th>Résultat</th>
+                <th>Détails</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${state.logs.map(l => `
+                <tr>
+                  <td>${new Date(l.t).toLocaleString("fr-FR")}</td>
+                  <td><b>${esc(l.card)}</b></td>
+                  <td>${esc(l.service)}</td>
+                  <td>
+                    <span class="badge-status ${l.ok ? 'Active' : 'Désactivé'}">
+                      ${l.ok ? 'AUTORISÉ' : 'REFUSÉ'}
+                    </span>
+                  </td>
+                  <td style="color:var(--text-muted); font-size:13px;">${esc(l.why)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function clearLogs() {
+  state.logs = [];
+  saveState();
+  render();
+}
+
+// --- VUE PASSE VIRTUEL ---
+
+function renderVisitorView(container) {
+  const c = state.cards.find(x => x.id === state.visitorId);
+  if (!c) { state.visitorId = null; render(); return; }
+
+  const status = getStatus(c);
+
+  container.innerHTML = `
+    <div style="margin-bottom:20px">
+      <button class="btn alt sm" onclick="state.visitorId = null; render();">← Retour</button>
+    </div>
+
+    <div class="pass-container">
+      <div class="pass-card">
+        <div class="pass-top">
+          <div class="avatar">${esc(c.prenom.charAt(0))}${esc(c.nom.charAt(0))}</div>
+          <h3>${esc(c.prenom)} ${esc(c.nom)}</h3>
+          <p>Service : ${esc(c.service)}</p>
+        </div>
+
+        <div class="pass-body">
+          <span class="badge-status ${status}">${status}</span>
+
+          <div class="qr-box" id="passQr"></div>
+          
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px">Protection dynamique contre les captures</div>
+          <div class="timer-bar"><div class="timer-fill" id="passTimer"></div></div>
+
+          <div style="text-align:left; margin-top:20px; font-size:13px; display:flex; flex-direction:column; gap:8px">
+            <div><b>Horaires d'accès :</b> De ${c.startHour} à ${c.endHour}</div>
+            <div><b>État :</b> ${status === 'Active' ? 'Badge valide et actif' : 'Badge Inactif'}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  startQrAnimation(c);
+}
+
+let qrInterval = null;
+function startQrAnimation(c) {
+  clearInterval(qrInterval);
+  const update = async () => {
+    const status = getStatus(c);
+    const box = document.getElementById("passQr");
+    const bar = document.getElementById("passTimer");
+    if (!box) return;
+
+    if (status === "Active") {
+      const tok = await token(c);
+      const q = qrcode(0, "M");
+      q.addData(tok);
+      q.make();
+      box.innerHTML = q.createSvgTag({ cellSize: 5, margin: 0, scalable: true });
+    } else {
+      box.innerHTML = `<div style="padding:30px 10px; color:var(--ko); font-weight:700">BADGE INACTIF<br><span style="font-size:12px; font-weight:400; color:var(--text-muted)">(${status})</span></div>`;
+    }
+
+    const remaining = CONFIG.STEP - (Date.now() % CONFIG.STEP);
+    if (bar) bar.style.width = ((remaining / CONFIG.STEP) * 100) + "%";
+  };
+
+  update();
+  qrInterval = setInterval(update, 1000);
+}
+
+// Global Theme Handler
+document.getElementById("themeToggle").onclick = () => {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = current === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+};
+
+// Initial Start
+render();
+</script>
+</body>
+</html>
